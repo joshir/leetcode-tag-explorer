@@ -1,2 +1,3 @@
 # lc-problem-analyzer
-provide additional analyzing ability to group problems into categories
+Provide additional analyzing ability to group problems into categories by tags like `query(company, easy, binary-search).`
+
