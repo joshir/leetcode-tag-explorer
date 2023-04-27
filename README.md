@@ -5,7 +5,7 @@ This app provides an in-memory map of leetcode.com problem stats based on json o
 N.B. Please don't ask me for the json files. You will need to get a **premium subscribtion** to scrape all leetcode problems. 
 
 ### set up your resources
-For now, simple put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`.
+For now, simply put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`.
 <p>
   <img src="https://github.com/joshir/leetcode-tag-explorer/blob/main/img/Screenshot%202023-04-26%20at%209.09.57%20PM.png" alt="screenshot"/>
 </p>
