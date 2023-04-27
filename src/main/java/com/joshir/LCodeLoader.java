@@ -50,11 +50,10 @@ public class LCodeLoader implements CommandLineRunner {
   @Override
   public void run(String... args) {
     resources
-      .forEach(
-        (r, p) ->
-          dataByType
-            .put(p.getKey(),
-              JsonMapper.loadResourceAsList(r, p.getKey(), p.getValue()))
+      .forEach((r, p) ->
+        dataByType
+          .put(p.getKey(),
+            JsonMapper.loadResourceAsList(r, p.getKey(), p.getValue()))
       );
   }
 
