@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static pl.touk.throwing.ThrowingFunction.unchecked;
 
 public class JsonMapper {
   private static final String ROOT_NAME;
@@ -27,7 +26,7 @@ public class JsonMapper {
   }
 
   /**
-   * Use Class<X> to read X into a list of X
+   * Use Class<?> to read X into a list of X
    * and eventually transform it with Func<X,Y>
    * into List<Y>
    * */
