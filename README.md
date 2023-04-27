@@ -1,6 +1,6 @@
 # Leetcode-tag-explorer
 
-This app provides an in-memory map of leetcode.com problem stats based on json objects retrieved from the browser console. You can query combinations that leetcode does not currently offer even to premium users.
+This app provides an in-memory map of leetcode.com problem stats based on json objects retrieved from the browser console. You can query combinations of tags that leetcode does not currently offer even to premium users.
 
 N.B. Please don't ask me for the json files. You will need to get a **premium subscribtion** to scrape all leetcode problems. 
 
