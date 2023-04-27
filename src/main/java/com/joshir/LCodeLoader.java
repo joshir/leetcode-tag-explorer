@@ -20,44 +20,61 @@ import java.util.function.Function;
 @Slf4j
 @SpringBootApplication
 public class LCodeLoader implements CommandLineRunner {
-  private final Map<Resource[], Pair<Class<?>, Function<?,?> >> resources = new HashMap();
+
+  /* resource[] mapped to pair<?,?> of class and operation to be performed*/
+  private final Map<Resource[], Pair<Class<?>, Function<?,?>>> resources = new HashMap();
+
+  /* in-memory map */
   private final Map<Class<?>, List<?>> dataByType = new HashMap();
+
+  /* stats for all problems */
   private final Resource[] unfiltered;
+
+  /* stats for all problems by company tag */
   private final Resource[] filtered;
 
   public LCodeLoader(
           @Value("${app.data.unfiltered.context.path}") Resource[] unfilteredProblems,
           @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
-
     unfiltered = unfilteredProblems;
     filtered = filteredByCompany;
     loadResources();
   }
 
   public static void main(String[] args) {
+
     SpringApplication.run(LCodeLoader.class, args);
+
   }
 
   @Override
   public void run(String... args) {
-    resources.forEach((r, p) -> {
-      dataByType
-        .put(p.getKey(),JsonMapper.loadResourceAsList(r, p.getKey(), p.getValue()));
-    });
-
-    // test
-    log.info(JsonMapper.writeToJson(dataByType.get(UnfilteredSet.class)));
-    log.info(JsonMapper.writeToJson(dataByType.get(FilteredSet.class)));
+    resources
+      .forEach(
+        (r, p) ->
+          dataByType
+            .put(p.getKey(),
+              JsonMapper.loadResourceAsList(r, p.getKey(), p.getValue()))
+      );
   }
 
   private void loadResources() {
-    resources
-      .put(unfiltered, new Pair<> (UnfilteredSet.class, (Function<UnfilteredSet, ProblemsetQuestionsList>) unfilteredSet -> unfilteredSet.getProblemsetQuestionList()));
-    resources
-      .put(filtered, new Pair<>(FilteredSet.class, (Function<FilteredSet, CompanyTag>) filteredSet -> filteredSet.getCompanyTag()));
-
-    dataByType.put(UnfilteredSet.class, new ArrayList<ProblemsetQuestionsList>());
-
-    dataByType.put(FilteredSet.class, new ArrayList<CompanyTag>());
+    long startTs = System.currentTimeMillis();
+    try {
+      resources
+        .put(unfiltered,
+          new Pair(UnfilteredSet.class, (Function<UnfilteredSet, ProblemsetQuestionsList>)
+            unfilteredSet -> unfilteredSet.getProblemsetQuestionList()));
+      resources
+        .put(filtered,
+          new Pair(FilteredSet.class, (Function<FilteredSet, CompanyTag>)
+            filteredSet -> filteredSet.getCompanyTag()));
+      dataByType.put(UnfilteredSet.class, new ArrayList<ProblemsetQuestionsList>());
+      dataByType.put(FilteredSet.class, new ArrayList<CompanyTag>());
+    } catch(Exception e) {
+      // todo handle specific exceptions specifically
+      log.error("whoops");
+    }
+    log.info("loaded data from resources in {} ms", (System.currentTimeMillis() - startTs));
   }
 }

@@ -26,6 +26,11 @@ public class JsonMapper {
     mapper.configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
   }
 
+  /**
+   * Use Class<X> to read X into a list of X
+   * and eventually transform it with Func<X,Y>
+   * into List<Y>
+   * */
   public static <X, Y>  List<Y> loadResourceAsList(Resource[] resources,
                                                    Class<?> clazz,
                                                    Function<X, Y> func) {
@@ -46,12 +51,13 @@ public class JsonMapper {
       .collect(Collectors.toList());
   }
 
+  // todo handle exception
   @SneakyThrows
   public static <T> T readFromJson(String json, Class<T> clazz){
       return mapper.readValue(json, clazz);
   }
 
-
+  // todo handle exception
   @SneakyThrows
   public static String writeToJson(Object obj) {
     return mapper.writeValueAsString(obj);
