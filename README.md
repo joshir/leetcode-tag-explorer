@@ -1,6 +1,6 @@
 # leetcode-tag-explorer
 
-This is an in-memory map of leetcode.com problem stats based on json objects retrieved from the browser console (Please don't ask me for the json files. You will need to get a premium subscribtion for yourself to scrape them yourself. This is strictly for personal use.) 
+This is an in-memory map of leetcode.com problem stats based on json objects retrieved from the browser console (Please don't ask me for the json files. You will need to get a premium subscribtion to scrape all leetcode problems. This is strictly for personal use.) For now, simple put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`.
 
 # proposed features
 1. expose this api using graphql? (may be) 
