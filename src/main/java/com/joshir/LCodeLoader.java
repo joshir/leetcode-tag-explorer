@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,6 +31,7 @@ import java.util.stream.Collectors;
 public class LCodeLoader implements CommandLineRunner {
 
   /* resource[] mapped to pair<?,?> of class and operation to be performed*/
+  /* todo move these out of the driver class */
   private final Map<Resource[], Pair<Class<?>, Function<?,?>>> resources = new HashMap();
 
   /* in-memory map */
@@ -68,6 +68,11 @@ public class LCodeLoader implements CommandLineRunner {
         });
   }
 
+  /*
+   * load resources into the glorified "in memory" map by mapping from json
+   * to Object and return the processed data as a Pair of lists of unfiltered
+   * and filtered data.
+   * */
   private Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> getDataPair() {
     return () -> {
       List<UnfilteredQuestions> pList = null;
@@ -90,6 +95,11 @@ public class LCodeLoader implements CommandLineRunner {
     };
   }
 
+  /*
+  * simple transformer than flattens an object
+  * containing a list which contains another list and return
+  * the inner list
+  * */
   private <X,Y> List<Y> flatten(Class<?> clazz, Function<X,List<Y>> func) {
     return((List<X>) dataByType.get(clazz))
       .stream()
@@ -98,7 +108,11 @@ public class LCodeLoader implements CommandLineRunner {
       .collect(Collectors.toList());
   }
 
-  private static Pair<Class<?>,Function<?,?>> toPair(Class<?> clazz) {
+  /*
+  * convenience method that returns a Pair of Class<?> and Function<?,?>
+  * based on simple class name
+  * */
+  private Pair<Class<?>,Function<?,?>> toPair(Class<?> clazz) {
     switch(clazz.getSimpleName()){
       case "UnfilteredSet":
         return new Pair<>(clazz, (Function<UnfilteredSet, ProblemsetQuestionsList>) ufset -> ufset.getProblemsetQuestionList());
