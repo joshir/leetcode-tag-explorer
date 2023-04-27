@@ -1,19 +1,23 @@
-# leetcode-tag-explorer
+# Leetcode-tag-explorer
 
 This app provides an in-memory map of leetcode.com problem stats based on json objects retrieved from the browser console. You can query combinations that leetcode does not currently offer even to premium users.
 
 N.B. Please don't ask me for the json files. You will need to get a **premium subscribtion** to scrape all leetcode problems. 
 
-### set up your resources
-For now, simply put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`.
+### Set up your resources
+
+For now, simply put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`. File names don't matter and the JSON schema can be inferred through domain files listed [here](https://github.com/joshir/leetcode-tag-explorer/tree/main/src/main/java/com/joshir/domain). The mapper I'm using is set to ignore unkown properties in the files.
+
 <p>
   <img src="https://github.com/joshir/leetcode-tag-explorer/blob/main/img/Screenshot%202023-04-26%20at%209.09.57%20PM.png" alt="screenshot"/>
 </p>
 
-### run the app in your local env 
+
+
+### Run the app in your local env 
 `$ mvn spring-boot:run`
 
-## other proposed features
+## Other proposed features
 1. expose this api using graphql? (may be) 
 2. expose a REST api with the ability to query problems by anyone combination of `company`, `tag`, `difficulty`, and `frequency` (yes)
 3. create a simple client app in the browser to explore this data (may be)
