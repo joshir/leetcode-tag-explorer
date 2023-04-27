@@ -1,11 +1,12 @@
 package com.joshir;
 
-import com.fasterxml.jackson.databind.*;
 import com.joshir.domain.filtered.CompanyTag;
 import com.joshir.domain.filtered.FilteredSet;
+import com.joshir.domain.mapper.JsonMapper;
 import com.joshir.domain.unfiltered.ProblemsetQuestionsList;
 import com.joshir.domain.unfiltered.UnfilteredSet;
-import lombok.SneakyThrows;
+import com.joshir.domain.util.Pair;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -14,29 +15,23 @@ import org.springframework.core.io.Resource;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
-import static pl.touk.throwing.ThrowingFunction.unchecked;
 
+@Slf4j
 @SpringBootApplication
 public class LCodeLoader implements CommandLineRunner {
-  private static final String ROOT_NAME;
-  private static final ObjectMapper mapper;
-  private final List<ProblemsetQuestionsList> questionLists = new ArrayList<>();;
-  private final List<CompanyTag> questionsListByCompany = new ArrayList<>();;
-  private final List<Resource[]> resources = new ArrayList<>();
+  private final Map<Resource[], Pair<Class<?>, Function<?,?> >> resources = new HashMap();
+  private final Map<Class<?>, List<?>> dataByType = new HashMap();
+  private final Resource[] unfiltered;
+  private final Resource[] filtered;
 
-  static {
-    ROOT_NAME = "data";
-    mapper = new ObjectMapper();
-    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    mapper.configure(DeserializationFeature.UNWRAP_ROOT_VALUE, true);
-  }
   public LCodeLoader(
-       @Value("${app.data.unfiltered.context.path}") Resource[] unfilteredProblems,
-       @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
-      resources.add(unfilteredProblems);
-      resources.add(filteredByCompany);
+          @Value("${app.data.unfiltered.context.path}") Resource[] unfilteredProblems,
+          @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
+
+    unfiltered = unfilteredProblems;
+    filtered = filteredByCompany;
+    loadResources();
   }
 
   public static void main(String[] args) {
@@ -44,41 +39,25 @@ public class LCodeLoader implements CommandLineRunner {
   }
 
   @Override
-  @SneakyThrows
   public void run(String... args) {
-    questionLists
-      .addAll(
-        handle(
-          resources.get(0),
-          UnfilteredSet.class,
-          UnfilteredSet::getProblemsetQuestionList)
-      );
+    resources.forEach((r, p) -> {
+      dataByType
+        .put(p.getKey(),JsonMapper.loadResourceAsList(r, p.getKey(), p.getValue()));
+    });
 
-    questionsListByCompany
-      .addAll(
-        handle(
-          resources.get(1),
-          FilteredSet.class,
-          FilteredSet::getCompanyTag)
-      );
+    // test
+    log.info(JsonMapper.writeToJson(dataByType.get(UnfilteredSet.class)));
+    log.info(JsonMapper.writeToJson(dataByType.get(FilteredSet.class)));
   }
 
-  public <X, Y> List<Y> handle( Resource[] resources,
-                                Class<?> clazz,
-                                Function<X,Y> func) {
-    ObjectReader readerUnfilteredSet = mapper.reader(clazz).withRootName(ROOT_NAME);
-    List<X> list = new ArrayList<X>();
-    Arrays
-      .asList(resources)
-      .forEach(resource ->
-        unchecked((
-          __ -> list.add(readerUnfilteredSet.readValue(resource.getInputStream()))
-        )
-      )
-    );
-    return list
-      .stream()
-      .map(func)
-      .collect(Collectors.toList());
+  private void loadResources() {
+    resources
+      .put(unfiltered, new Pair<> (UnfilteredSet.class, (Function<UnfilteredSet, ProblemsetQuestionsList>) unfilteredSet -> unfilteredSet.getProblemsetQuestionList()));
+    resources
+      .put(filtered, new Pair<>(FilteredSet.class, (Function<FilteredSet, CompanyTag>) filteredSet -> filteredSet.getCompanyTag()));
+
+    dataByType.put(UnfilteredSet.class, new ArrayList<ProblemsetQuestionsList>());
+
+    dataByType.put(FilteredSet.class, new ArrayList<CompanyTag>());
   }
 }

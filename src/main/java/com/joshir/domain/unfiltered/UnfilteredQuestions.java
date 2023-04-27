@@ -1,6 +1,5 @@
 package com.joshir.domain.unfiltered;
 
-import com.joshir.domain.common.ProblemSet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
