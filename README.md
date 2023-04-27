@@ -3,6 +3,9 @@
 This is an in-memory map of leetcode.com problem stats based on json objects retrieved from the browser console (Please don't ask me for the json files. You will need to get a premium subscribtion for yourself to scrape problem stats for your personal use.) 
 
 # proposed features
-1. expose this api using graphql with the ability to query problems by `company`, `type`, `difficulty`, or even by `list(company)`, `type`, `difficulty`. Off the top, other queries like: "most frequetly occuring questions across all companies by frequency, type, difficulty" etc.
-2. rewrite this is `TypeScript` and create a chrome problem to display problem stats. (may be)
-3. create an actual db schema and feed the in-memory map to it, restructuring some of the raw data from leetcode.
+1. expose this api using graphql? (may be) 
+2. expose a REST api with the ability to query problems by `company`, `tag`, `difficulty`, and `frequency` and other combinations that leetcode does not currently offer even to premium users. (yes)
+3. create a simple client app in the browser to explore this data (may be)
+4. rewrite this in `TypeScript` and create a chrome problem to display problem stats. (may be) Follow up question: can we possibly use this to explore leetcode's data store in the browser further?
+
+
