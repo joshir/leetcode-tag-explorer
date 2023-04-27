@@ -14,6 +14,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.Resource;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
 
@@ -38,7 +40,6 @@ public class LCodeLoader implements CommandLineRunner {
           @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
     unfiltered = unfilteredProblems;
     filtered = filteredByCompany;
-    loadResources();
   }
 
   public static void main(String[] args) {
@@ -49,6 +50,7 @@ public class LCodeLoader implements CommandLineRunner {
 
   @Override
   public void run(String... args) {
+    loadResources();
     resources
       .forEach((r, p) ->
         dataByType
@@ -57,23 +59,32 @@ public class LCodeLoader implements CommandLineRunner {
       );
   }
 
+  /*
+   * for the time being it does not make much sense but
+   * off load this expensive operation to a dedicated thread.
+   * this will be needed at some point in the future when
+   * spring-web will be introduced to this project
+   * because we don't want to block the main thread event at startup
+   * */
   private void loadResources() {
-    long startTs = System.currentTimeMillis();
-    try {
-      resources
-        .put(unfiltered,
-          new Pair(UnfilteredSet.class, (Function<UnfilteredSet, ProblemsetQuestionsList>)
-            unfilteredSet -> unfilteredSet.getProblemsetQuestionList()));
-      resources
-        .put(filtered,
-          new Pair(FilteredSet.class, (Function<FilteredSet, CompanyTag>)
-            filteredSet -> filteredSet.getCompanyTag()));
-      dataByType.put(UnfilteredSet.class, new ArrayList<ProblemsetQuestionsList>());
-      dataByType.put(FilteredSet.class, new ArrayList<CompanyTag>());
-    } catch(Exception e) {
-      // todo handle specific exceptions specifically
-      log.error("whoops");
-    }
-    log.info("loaded data from resources in {} ms", (System.currentTimeMillis() - startTs));
+    Executors.newFixedThreadPool(1).submit(() -> {
+      long startTs = System.currentTimeMillis();
+      try {
+        resources
+          .put(unfiltered,
+            new Pair(UnfilteredSet.class, (Function<UnfilteredSet, ProblemsetQuestionsList>)
+              unfilteredSet -> unfilteredSet.getProblemsetQuestionList()));
+        resources
+          .put(filtered,
+            new Pair(FilteredSet.class, (Function<FilteredSet, CompanyTag>)
+              filteredSet -> filteredSet.getCompanyTag()));
+        dataByType.put(UnfilteredSet.class, new ArrayList<ProblemsetQuestionsList>());
+        dataByType.put(FilteredSet.class, new ArrayList<CompanyTag>());
+      } catch (Exception e) {
+        // todo handle specific exceptions specifically
+        log.error("whoops");
+      }
+      log.info("loaded data from resources in {} ms", (System.currentTimeMillis() - startTs));
+    });
   }
 }
