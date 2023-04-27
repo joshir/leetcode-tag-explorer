@@ -6,7 +6,7 @@ N.B. Please don't ask me for the json files. You will need to get a **premium su
 
 ### Set up your resources
 
-For now, simply put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`. File names don't matter and the JSON schema can be inferred through domain files listed [here](https://github.com/joshir/leetcode-tag-explorer/tree/main/src/main/java/com/joshir/domain). The mapper I'm using is set to ignore unkown properties in the files.
+For now, simply put all json files with company tags under `src/main/resource/data/company` folder and all unfiltered json files under `src/main/resource/data/unfiltered`. File names don't matter and the JSON schema can be inferred through domain files listed [here](https://github.com/joshir/leetcode-tag-explorer/tree/main/src/main/java/com/joshir/domain). The object mapper I'm using is configured to ignore unkown properties and can be configured [here](https://github.com/joshir/leetcode-tag-explorer/blob/fc02500a1e2e923ee256c2ada62c94d7778e173b/src/main/java/com/joshir/domain/mapper/JsonMapper.java#L26).
 
 <p>
   <img src="https://github.com/joshir/leetcode-tag-explorer/blob/main/img/Screenshot%202023-04-26%20at%209.09.57%20PM.png" alt="screenshot"/>
