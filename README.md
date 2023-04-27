@@ -22,6 +22,6 @@ For now, simply put all the raw json files with company tags under the `src/main
 1. expose this api using graphql? (may be) 
 2. expose a REST api with the ability to query problems by any combination of `company`, `tag`, `difficulty`, and `frequency` (yes)
 3. create a simple client app in the browser to explore this data (may be)
-4. rewrite this in `TypeScript` and create a chrome problem to display problem stats. (may be) Follow up question: can we possibly use this to explore leetcode's data store in the browser further?
+4. rewrite this in `TypeScript` and create a chrome plugin port. (may be) Follow up question: can we possibly use this to explore leetcode's data store in the browser further?
 
 
