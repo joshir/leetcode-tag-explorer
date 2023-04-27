@@ -15,6 +15,7 @@ For now, simply put all json files with company tags under `src/main/resource/da
 
 
 ### Run the app in your local env 
+cd into project root and run 
 `$ mvn spring-boot:run`
 
 ## Other proposed features
