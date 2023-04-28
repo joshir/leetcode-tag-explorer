@@ -14,6 +14,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 
+
 public class JsonMapper {
   private static final String ROOT_NAME;
   private static final ObjectMapper mapper;
@@ -33,7 +34,7 @@ public class JsonMapper {
   public static <X, Y>  List<Y> loadResourceAsList(Resource[] resources,
                                                    Class<?> clazz,
                                                    Function<X, Y> func) {
-    ObjectReader readerUnfilteredSet = mapper.reader(clazz).withRootName(ROOT_NAME);
+    ObjectReader readerUnfilteredSet = mapper.readerFor(clazz).withRootName(ROOT_NAME);
     List<X> list = new ArrayList<>();
     Arrays
       .asList(resources)
@@ -44,21 +45,10 @@ public class JsonMapper {
           throw new RuntimeException(e);
         }
       });
+
     return list
       .stream()
-      .map(func)
+      .flatMap(func.andThen(s-> ((List<Y>) s).stream()))
       .collect(Collectors.toList());
-  }
-
-  // todo handle exception
-  @SneakyThrows
-  public static <T> T readFromJson(String json, Class<T> clazz){
-      return mapper.readValue(json, clazz);
-  }
-
-  // todo handle exception
-  @SneakyThrows
-  public static String writeToJson(Object obj) {
-    return mapper.writeValueAsString(obj);
   }
 }

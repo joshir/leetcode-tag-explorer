@@ -9,9 +9,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Pair <K,V>{
-  @EqualsAndHashCode.Include
-  private K key;
-  private V value;
+public class Pair <T1, T2>{
+  private T1 t1;
+  private T2 t2;
 }

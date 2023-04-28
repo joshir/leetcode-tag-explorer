@@ -1,53 +1,49 @@
 package com.joshir;
 
-import com.joshir.domain.filtered.CompanyTag;
 import com.joshir.domain.filtered.FilteredSet;
 import com.joshir.domain.filtered.Question;
 import com.joshir.domain.mapper.JsonMapper;
-import com.joshir.domain.unfiltered.ProblemsetQuestionsList;
 import com.joshir.domain.unfiltered.UnfilteredQuestions;
 import com.joshir.domain.unfiltered.UnfilteredSet;
 import com.joshir.domain.util.Pair;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.Resource;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 
 @Slf4j
 @SpringBootApplication
-public class LCodeLoader implements CommandLineRunner {
+/* todo move these out of the driver class */
+public class LCodeLoader implements CommandLineRunner, DisposableBean {
 
   /* resource[] mapped to pair<?,?> of class and operation to be performed*/
-  /* todo move these out of the driver class */
-  private final Map<Resource[], Pair<Class<?>, Function<?,?>>> resources = new HashMap();
+  private final Map<Resource[], Pair<Class<?>, Function<?,?>>> _resources;
 
   /* in-memory map */
-  private final Map<Class<?>, List<?>> dataByType = new HashMap();
-
   /* stats for all problems */
-  private final Resource[] unfiltered;
+  private final Pair<List<UnfilteredQuestions>, List<Question>> _mem ;
 
-  /* stats for all problems by company tag */
-  private final Resource[] filtered;
+  /* dedicated thread for objectMapping from JSON */
+  private final ExecutorService exec = Executors.newFixedThreadPool(1);
 
   public LCodeLoader(
           @Value("${app.data.unfiltered.context.path}") Resource[] unfilteredProblems,
           @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
-    unfiltered = unfilteredProblems;
-    filtered = filteredByCompany;
+    _resources = Map.of(unfilteredProblems, toPair(UnfilteredSet.class), filteredByCompany, toPair(FilteredSet.class));
+    _mem = new Pair<>();
   }
 
   /*
@@ -59,12 +55,18 @@ public class LCodeLoader implements CommandLineRunner {
    * */
   private void loadResources() {
     long startTs = System.currentTimeMillis();
-    Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> c = getDataPair();
+    Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> suite = getDataPair();
 
     CompletableFuture
-      .supplyAsync(c, Executors.newFixedThreadPool(1))
-        .thenAccept(p ->{
-          log.info("loaded {} problems and a total of {} repeated problems from resources in {} ms", p.getKey().size(), p.getValue().size(), System.currentTimeMillis() - startTs);
+      .supplyAsync(suite, exec)
+        .thenAccept(p -> {
+          _mem.setT1(p.getT1());
+          _mem.setT2(p.getT2());
+          log.info(
+            "loaded {} problems and a total of {} repeated problems from resources in {} ms",
+            p.getT1().size(),
+            p.getT2().size(),
+            System.currentTimeMillis() - startTs);
         });
   }
 
@@ -73,39 +75,20 @@ public class LCodeLoader implements CommandLineRunner {
    * to Object and return the processed data as a Pair of lists of unfiltered
    * and filtered data.
    * */
+  @SuppressWarnings("unchecked")
   private Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> getDataPair() {
     return () -> {
-      List<UnfilteredQuestions> pList = null;
-      List<Question> qList = null;
+      final Map<Class<?>, List<?>> dataByType = new HashMap<>();
       try {
-        resources.put(unfiltered, toPair(UnfilteredSet.class));
-        resources.put(filtered, toPair(FilteredSet.class));
-        dataByType.put(UnfilteredSet.class, new ArrayList<ProblemsetQuestionsList>());
-        dataByType.put(FilteredSet.class, new ArrayList<CompanyTag>());
-        resources.forEach((r, p) -> dataByType.put(p.getKey(), JsonMapper.loadResourceAsList(r, p.getKey(), p.getValue())));
-
-        pList = flatten(UnfilteredSet.class, (Function<ProblemsetQuestionsList, List<UnfilteredQuestions>>) p -> p.getQuestions());
-        qList = flatten(FilteredSet.class, (Function<CompanyTag, List<Question>>) filteredSet -> filteredSet.getQuestions());
+        _resources.forEach((r, p) -> dataByType.put(p.getT1(), JsonMapper.loadResourceAsList(r, p.getT1(), p.getT2())));
       } catch (Exception e) {
         // todo handle specific exceptions specifically
         log.error("whoops");
         throw new RuntimeException();
       }
-      return new Pair<>(pList, qList);
+      return new Pair<>((List<UnfilteredQuestions>) dataByType.get(UnfilteredSet.class),
+        (List<Question>) dataByType.get(FilteredSet.class));
     };
-  }
-
-  /*
-  * simple transformer than flattens an object
-  * containing a list which contains another list and return
-  * the inner list
-  * */
-  private <X,Y> List<Y> flatten(Class<?> clazz, Function<X,List<Y>> func) {
-    return((List<X>) dataByType.get(clazz))
-      .stream()
-      .map(func)
-      .flatMap(List::stream)
-      .collect(Collectors.toList());
   }
 
   /*
@@ -113,14 +96,15 @@ public class LCodeLoader implements CommandLineRunner {
   * based on simple class name
   * */
   private Pair<Class<?>,Function<?,?>> toPair(Class<?> clazz) {
-    switch(clazz.getSimpleName()){
-      case "UnfilteredSet":
-        return new Pair<>(clazz, (Function<UnfilteredSet, ProblemsetQuestionsList>) ufset -> ufset.getProblemsetQuestionList());
-      case "FilteredSet":
-        return new Pair<>(clazz, (Function<FilteredSet, CompanyTag>) fset -> fset.getCompanyTag());
-      default:
-        throw new RuntimeException();
-    }
+    return switch (clazz.getSimpleName()) {
+      case "UnfilteredSet" ->
+        new Pair<>(clazz, (Function<UnfilteredSet, List<UnfilteredQuestions>>)
+          ufset -> ufset.getProblemsetQuestionList().getQuestions());
+      case "FilteredSet" ->
+        new Pair<>(clazz, (Function<FilteredSet, List<Question>>)
+          fset -> fset.getCompanyTag().getQuestions());
+      default -> throw new RuntimeException();
+    };
   }
 
   public static void main(String[] args) {
@@ -130,5 +114,11 @@ public class LCodeLoader implements CommandLineRunner {
   @Override
   public void run(String... args) {
     loadResources();
+  }
+
+  @Override
+  public void destroy() throws Exception {
+    /* release thread */
+    exec.shutdown();
   }
 }
