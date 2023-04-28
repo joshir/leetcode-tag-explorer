@@ -61,6 +61,5 @@ public class JsonMapper {
   @SneakyThrows
   public static String writeToJson(Object obj) {
       return mapper.writeValueAsString(obj);
-
   }
 }

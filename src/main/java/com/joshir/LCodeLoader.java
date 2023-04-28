@@ -17,6 +17,7 @@ import org.springframework.core.io.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -42,6 +43,8 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
   public LCodeLoader(
           @Value("${app.data.unfiltered.context.path}") Resource[] unfilteredProblems,
           @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
+    Objects.requireNonNull(unfilteredProblems, "Files not found!");
+    Objects.requireNonNull(filteredByCompany, "Files not found!");
     _resources = Map.of(unfilteredProblems, toPair(UnfilteredSet.class), filteredByCompany, toPair(FilteredSet.class));
     _mem = new Pair<>();
   }
