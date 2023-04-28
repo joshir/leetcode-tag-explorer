@@ -2,10 +2,10 @@ package com.joshir;
 
 import com.joshir.domain.filtered.FilteredSet;
 import com.joshir.domain.filtered.Question;
-import com.joshir.domain.mapper.JsonMapper;
+import com.joshir.mapper.JsonMapper;
 import com.joshir.domain.unfiltered.UnfilteredQuestions;
 import com.joshir.domain.unfiltered.UnfilteredSet;
-import com.joshir.domain.util.Pair;
+import com.joshir.util.Pair;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.beans.factory.annotation.Value;
@@ -59,7 +59,7 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
 
     CompletableFuture
       .supplyAsync(suite, exec)
-        .thenAccept(p -> {
+        .thenAcceptAsync(p -> {
           _mem.setT1(p.getT1());
           _mem.setT2(p.getT2());
           log.info(
@@ -67,7 +67,7 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
             p.getT1().size(),
             p.getT2().size(),
             System.currentTimeMillis() - startTs);
-        });
+        }, exec);
   }
 
   /*
@@ -75,7 +75,6 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
    * to Object and return the processed data as a Pair of lists of unfiltered
    * and filtered data.
    * */
-  @SuppressWarnings("unchecked")
   private Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> getDataPair() {
     return () -> {
       final Map<Class<?>, List<?>> dataByType = new HashMap<>();
@@ -86,8 +85,7 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
         log.error("whoops");
         throw new RuntimeException();
       }
-      return new Pair<>((List<UnfilteredQuestions>) dataByType.get(UnfilteredSet.class),
-        (List<Question>) dataByType.get(FilteredSet.class));
+      return Pair.castTogether(dataByType.get(UnfilteredSet.class), dataByType.get(FilteredSet.class));
     };
   }
 
@@ -121,4 +119,6 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
     /* release thread */
     exec.shutdown();
   }
+
+
 }

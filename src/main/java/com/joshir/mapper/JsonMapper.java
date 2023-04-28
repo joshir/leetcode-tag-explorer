@@ -1,8 +1,9 @@
-package com.joshir.domain.mapper;
+package com.joshir.mapper;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import lombok.SneakyThrows;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -50,5 +51,16 @@ public class JsonMapper {
       .stream()
       .flatMap(func.andThen(s-> ((List<Y>) s).stream()))
       .collect(Collectors.toList());
+  }
+
+  @SneakyThrows
+  public static <T> T readFromJson(String json, Class<T> clazz){
+      return mapper.readValue(json, clazz);
+  }
+
+  @SneakyThrows
+  public static String writeToJson(Object obj) {
+      return mapper.writeValueAsString(obj);
+
   }
 }

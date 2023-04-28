@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -15,7 +16,7 @@ public class Question {
   private Integer questionId;
   private Integer questionFrontendId;
   private String translatedTitle;
-  private String stats;
+  private Statistics stats;
   private String difficulty;
   private Boolean isPaidOnly;
   private Boolean canSeeQuestion;
