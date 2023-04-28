@@ -3,7 +3,6 @@ package com.joshir.domain.mapper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
-import lombok.SneakyThrows;
 import org.springframework.core.io.Resource;
 
 import java.io.IOException;
@@ -31,6 +30,7 @@ public class JsonMapper {
    * and eventually transform it with Func<X,Y>
    * into List<Y>
    * */
+  @SuppressWarnings("unchecked")
   public static <X, Y>  List<Y> loadResourceAsList(Resource[] resources,
                                                    Class<?> clazz,
                                                    Function<X, Y> func) {
