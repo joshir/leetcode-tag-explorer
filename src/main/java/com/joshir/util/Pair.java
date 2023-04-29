@@ -13,9 +13,4 @@ import java.util.List;
 public class Pair <T1, T2>{
   private T1 t1;
   private T2 t2;
-
-  @SuppressWarnings("unchecked")
-  public static <X,Y>  Pair<List<X>,List<Y>> castTogether(final List<?> x, final List<?> y) {
-    return new Pair<>((List<X>) x,(List<Y>) y);
-  }
 }

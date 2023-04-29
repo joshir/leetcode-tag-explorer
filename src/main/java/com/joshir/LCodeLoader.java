@@ -1,5 +1,6 @@
 package com.joshir;
 
+import com.joshir.domain.filtered.CompanyTag;
 import com.joshir.domain.filtered.FilteredSet;
 import com.joshir.domain.filtered.Question;
 import com.joshir.mapper.JsonMapper;
@@ -14,15 +15,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.io.Resource;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 @Slf4j
@@ -35,16 +34,19 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
 
   /* in-memory map */
   /* stats for all problems */
-  private final Pair<List<UnfilteredQuestions>, List<Question>> _mem ;
+  private final Pair<List<UnfilteredQuestions>, Map<String, List<Question>>> _mem ;
 
   /* dedicated thread for objectMapping from JSON */
   private final ExecutorService exec = Executors.newFixedThreadPool(1);
 
+  private final JsonMapper jsonMapper;
+
   public LCodeLoader(
           @Value("${app.data.unfiltered.context.path}") Resource[] unfilteredProblems,
-          @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany) {
-    Objects.requireNonNull(unfilteredProblems, "Files not found!");
-    Objects.requireNonNull(filteredByCompany, "Files not found!");
+          @Value("${app.data.filtered.context.path}") Resource[] filteredByCompany, JsonMapper jsonMapper) {
+    this.jsonMapper = jsonMapper;
+    Objects.requireNonNull(unfilteredProblems, "File(s) not found!");
+    Objects.requireNonNull(filteredByCompany, "File(s) not found!");
     _resources = Map.of(unfilteredProblems, toPair(UnfilteredSet.class), filteredByCompany, toPair(FilteredSet.class));
     _mem = new Pair<>();
   }
@@ -58,7 +60,7 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
    * */
   private void loadResources() {
     long startTs = System.currentTimeMillis();
-    Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> suite = getDataPair();
+    Supplier<Pair<List<UnfilteredQuestions>, Map<String,List<Question>>>> suite = getDataPair();
 
     CompletableFuture
       .supplyAsync(suite, exec)
@@ -78,17 +80,24 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
    * to Object and return the processed data as a Pair of lists of unfiltered
    * and filtered data.
    * */
-  private Supplier<Pair<List<UnfilteredQuestions>, List<Question>>> getDataPair() {
+  @SuppressWarnings("unchecked")
+  private Supplier<Pair<List<UnfilteredQuestions>, Map<String,List<Question>>>> getDataPair() {
     return () -> {
       final Map<Class<?>, List<?>> dataByType = new HashMap<>();
       try {
-        _resources.forEach((r, p) -> dataByType.put(p.getT1(), JsonMapper.loadResourceAsList(r, p.getT1(), p.getT2())));
+        _resources.forEach((r, p) -> dataByType.put(p.getT1(), jsonMapper.loadResourceAsList(r, p.getT1(), p.getT2())));
       } catch (Exception e) {
         // todo handle specific exceptions specifically
         log.error("whoops");
         throw new RuntimeException();
       }
-      return Pair.castTogether(dataByType.get(UnfilteredSet.class), dataByType.get(FilteredSet.class));
+
+      return new Pair<> (
+        (List<UnfilteredQuestions>) dataByType.get(UnfilteredSet.class),
+        ((List<CompanyTag>) dataByType.get(FilteredSet.class))
+          .stream()
+          .collect(Collectors.groupingBy(CompanyTag::getName, Collectors.flatMapping(ctag-> ctag.getQuestions().stream(), Collectors.toList())))
+      );
     };
   }
 
@@ -102,8 +111,8 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
         new Pair<>(clazz, (Function<UnfilteredSet, List<UnfilteredQuestions>>)
           ufset -> ufset.getProblemsetQuestionList().getQuestions());
       case "FilteredSet" ->
-        new Pair<>(clazz, (Function<FilteredSet, List<Question>>)
-          fset -> fset.getCompanyTag().getQuestions());
+        new Pair<>(clazz, (Function<FilteredSet, List<CompanyTag>>)
+          fset -> List.of(fset.getCompanyTag()));
       default -> throw new RuntimeException();
     };
   }
@@ -122,6 +131,4 @@ public class LCodeLoader implements CommandLineRunner, DisposableBean {
     /* release thread */
     exec.shutdown();
   }
-
-
 }

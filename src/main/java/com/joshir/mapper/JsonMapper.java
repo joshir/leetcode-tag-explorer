@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import lombok.SneakyThrows;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,9 +16,10 @@ import java.util.stream.Collectors;
 
 
 
+@Component
 public class JsonMapper {
   private static final String ROOT_NAME;
-  private static final ObjectMapper mapper;
+  public static final ObjectMapper mapper;
 
   static {
     ROOT_NAME = "data";
@@ -32,7 +34,7 @@ public class JsonMapper {
    * into List<Y>
    * */
   @SuppressWarnings("unchecked")
-  public static <X, Y>  List<Y> loadResourceAsList(Resource[] resources,
+  public <X, Y> List<Y> loadResourceAsList(Resource[] resources,
                                                    Class<?> clazz,
                                                    Function<X, Y> func) {
     ObjectReader readerUnfilteredSet = mapper.readerFor(clazz).withRootName(ROOT_NAME);
@@ -54,12 +56,10 @@ public class JsonMapper {
   }
 
   @SneakyThrows
-  public static <T> T readFromJson(String json, Class<T> clazz){
+  public <T> T readFromJson(String json, Class<T> clazz){
       return mapper.readValue(json, clazz);
   }
 
   @SneakyThrows
-  public static String writeToJson(Object obj) {
-      return mapper.writeValueAsString(obj);
-  }
+  public String writeToJson(Object obj) { return mapper.writeValueAsString(obj); }
 }

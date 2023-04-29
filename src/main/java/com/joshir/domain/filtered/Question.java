@@ -1,5 +1,7 @@
 package com.joshir.domain.filtered;
 
+import com.fasterxml.jackson.annotation.JsonUnwrapped;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.joshir.domain.unfiltered.Topic;
 import lombok.AllArgsConstructor;
 import lombok.Data;
